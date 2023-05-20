@@ -1,0 +1,164 @@
+import * as vscode from 'vscode';
+import { spawn } from 'child_process';
+import * as os from 'os';
+import * as path from 'path';
+
+
+const logger = vscode.window.createOutputChannel('Ipe Tools', { log: true });
+
+
+function launchIpe(path: vscode.Uri) {
+
+	const config = vscode.workspace.getConfiguration('ipe-tools');
+	const executable = config.get('executable', 'ipe');
+
+	logger.info('Spawning Ipe process:', executable, path.fsPath);
+	const child = spawn(executable, [path.fsPath]);
+
+	child.on('error', (error: NodeJS.ErrnoException) => {
+		if (error.code === 'ENOENT') {
+			logger.error("Can't find specified Ipe executable:", executable);
+
+			vscode.window.showErrorMessage("Can't find the specified Ipe executable. Check that it's in your PATH or that the provided path is correct.");
+		} else {
+			logger.error('Unexpected Ipe error:', error);
+		}
+	});
+
+	child.on('exit', code => {
+		logger.info('Ipe exited with code', code);
+	});
+}
+
+
+async function insertFigure() {
+
+	// This cannot be undefined as the command is only enabled with editorTextFocus
+	const editor = vscode.window.activeTextEditor!;
+	let figureName: string;
+
+	if (editor.selection.isEmpty) {
+		logger.debug('No editor selection, prompting for figure name');
+
+		const name = await vscode.window.showInputBox({ placeHolder: 'Figure name', prompt: 'Enter the name of the new Ipe figure' });
+
+		if (name === undefined) {
+			return;
+		}
+		figureName = name;
+
+		logger.debug('Inserting figure name at cursor position:', figureName);
+
+		const cursorPosition = editor.selection.active;
+		editor.edit(editBuilder => editBuilder.insert(cursorPosition, figureName));
+
+		logger.debug('Selecting figure name in editor');
+
+		editor.selections = [new vscode.Selection(cursorPosition, cursorPosition.translate(0, figureName.length))];
+	} else {
+		figureName = editor.document.getText(editor.selection);
+		logger.debug('Using figure name from highlighted text in document:', figureName);
+	}
+
+	const config = vscode.workspace.getConfiguration('ipe-tools');
+
+	let snippet: string | string[] = config.get('snippet', []);
+
+	if (Array.isArray(snippet)) {
+		const eol = editor.document.eol === 1 ? '\n' : '\r\n';
+		snippet = snippet.join(eol);
+	}
+
+	vscode.commands.executeCommand('editor.action.insertSnippet', { snippet: snippet });
+
+	const figureDir = path.join(path.dirname(editor.document.fileName), config.get('figurePath', 'figures'));
+	const figureDirUri = vscode.Uri.file(figureDir);
+
+	// TODO: This doesn't quite work, it always creates the diretory
+	try {
+		logger.debug('Checking if figure directory exits:', figureDir);
+		await vscode.workspace.fs.stat(figureDirUri);
+	} catch {
+		logger.debug('Figure directory does not exist, creating path:', figureDir);
+		await vscode.workspace.fs.createDirectory(figureDirUri);
+	}
+
+	const fileExtension = config.get('figureFileExtension', 'ipe');
+
+	const figurePath = path.join(figureDir, `${figureName}.${fileExtension}`);
+	logger.debug('Using figure path', figurePath);
+
+	launchIpe(vscode.Uri.file(figurePath));
+}
+
+
+async function newFigure() {
+
+	let defaultUri;
+	if (vscode.workspace.workspaceFolders) {
+		defaultUri = vscode.workspace.workspaceFolders[0].uri;
+	} else {
+		defaultUri = vscode.Uri.file(os.homedir());
+	}
+
+	logger.debug('Prompting for a save location');
+
+	const path = await vscode.window.showSaveDialog({
+		defaultUri: defaultUri,
+		filters: { Ipe: ['ipe', 'pdf'] },
+		title: 'Create Ipe figure',
+	});
+
+	if (path === undefined) {
+		logger.debug('No save location picked, exiting');
+		return;
+	}
+
+	launchIpe(path);
+}
+
+
+async function editFigure(path?: vscode.Uri) {
+
+	if (path === undefined) {
+		logger.debug('No URI provided, prompting user');
+		let defaultUri;
+
+		if (vscode.workspace.workspaceFolders) {
+			defaultUri = vscode.workspace.workspaceFolders[0].uri;
+		} else {
+			defaultUri = vscode.Uri.file(os.homedir());
+		}
+
+		const paths = await vscode.window.showOpenDialog({
+			canSelectFiles: true,
+			canSelectFolders: false,
+			canSelectMany: false,
+			defaultUri: defaultUri,
+			filters: { 'Ipe': ['ipe', 'pdf'] },
+			title: 'Open Ipe Figure',
+		});
+
+		if (paths === undefined) {
+			logger.debug('No file picked, exiting');
+			return;
+		}
+		path = paths[0];
+
+		logger.debug('User picked file:', path.fsPath);
+	}
+
+	launchIpe(path);
+}
+
+
+export function activate(context: vscode.ExtensionContext) {
+
+	logger.info('Extension activated');
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(`ipe-tools.insertFigure`, insertFigure),
+		vscode.commands.registerCommand(`ipe-tools.newFigure`, newFigure),
+		vscode.commands.registerCommand(`ipe-tools.editFigure`, editFigure),
+	);
+}

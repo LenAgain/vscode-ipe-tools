@@ -1,0 +1,111 @@
+{
+    "name": "ipe-tools",
+    "displayName": "Ipe Tools",
+    "author": "LenAgain",
+    "description": "Tools for integrating the Ipe extensible drawing editor into VS Code",
+    "license": "GPL-3.0-or-later",
+    "repository": {
+        "url": "https://github.com/LenAgain/vscode-ipe-tools.git",
+        "type": "git"
+    },
+    "version": "0.0.1",
+    "preview": true,
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "ipe-tools.insertFigure",
+                "title": "Ipe: Insert Figure"
+            },
+            {
+                "command": "ipe-tools.newFigure",
+                "title": "Ipe: New Figure"
+            },
+            {
+                "command": "ipe-tools.editFigure",
+                "title": "Ipe: Edit Figure"
+            }
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "ipe-tools.editFigure",
+                    "when": "resourceExtname == .ipe",
+                    "group": "7_modification"
+                }
+            ]
+        },
+        "configuration": [
+            {
+                "title": "Ipe Tools",
+                "properties": {
+                    "ipe-tools.executable": {
+                        "markdownDescription": "The path to the `ipe` executable.",
+                        "order": 10,
+                        "type": "string",
+                        "scope": "resource",
+                        "default": "ipe"
+                    },
+                    "ipe-tools.snippet": {
+                        "markdownDescription": "The snippet string to insert when running `ipe-tools.insertFigure`. This can be any snippet, but should use the `TM_SELECTED_TEXT` variable in its first placeholder in order to work properly. The figure name is inserted, and then the snippet is inserted while the figure name is selected. This can be a single string or an array of lines.",
+                        "order": 20,
+                        "type": ["string", "array"],
+                        "items": {
+                            "type": "string"
+                        },
+                        "scope": "resource",
+                        "default": [
+                            "\\begin{figure}[H]",
+                            "\t\\centering",
+                            "\t\\includegraphics{${1:${TM_SELECTED_TEXT}}}\\label{fig:${1:${TM_SELECTED_TEXT}}}",
+                            "\\end{figure}$0"
+                        ]
+                    },
+                    "ipe-tools.figurePath": {
+                        "markdownDescription": "The path relative to the current document in which to create new figures when running `ipe-tools.insertFigure`. This assumes the correct platform path separators are used.",
+                        "order": 30,
+                        "type": "string",
+                        "scope": "resource",
+                        "default": "figures"
+                    },
+                    "ipe-tools.figureFileExtension": {
+                        "description": "The file extension to use when creating new figures, without the leading dot.",
+                        "order": 40,
+                        "type": "string",
+                        "scope": "resource",
+                        "default": "ipe"
+                    }
+                }
+            }
+        ]
+    },
+    "engines": {
+        "vscode": "^1.78.0"
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.78.0",
+        "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.1",
+        "@types/node": "16.x",
+        "@typescript-eslint/eslint-plugin": "^5.56.0",
+        "@typescript-eslint/parser": "^5.56.0",
+        "eslint": "^8.36.0",
+        "glob": "^8.1.0",
+        "mocha": "^10.2.0",
+        "typescript": "^4.9.5",
+        "@vscode/test-electron": "^2.3.0"
+    }
+}
