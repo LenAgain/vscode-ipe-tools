@@ -74,7 +74,6 @@ async function insertFigure() {
 	const figureDir = path.join(path.dirname(editor.document.fileName), config.get('figurePath', 'figures'));
 	const figureDirUri = vscode.Uri.file(figureDir);
 
-	// TODO: This doesn't quite work, it always creates the diretory
 	try {
 		logger.debug('Checking if figure directory exits:', figureDir);
 		await vscode.workspace.fs.stat(figureDirUri);
@@ -118,37 +117,62 @@ async function newFigure() {
 }
 
 
-async function editFigure(path?: vscode.Uri) {
+async function editFigure(figurePath?: vscode.Uri) {
 
-	if (path === undefined) {
-		logger.debug('No URI provided, prompting user');
-		let defaultUri;
+	logger.info('Editing figure');
 
-		if (vscode.workspace.workspaceFolders) {
-			defaultUri = vscode.workspace.workspaceFolders[0].uri;
-		} else {
-			defaultUri = vscode.Uri.file(os.homedir());
-		}
+	if (figurePath !== undefined) {
+		logger.debug('Using path passed as parameter:', figurePath.fsPath);
 
-		const paths = await vscode.window.showOpenDialog({
-			canSelectFiles: true,
-			canSelectFolders: false,
-			canSelectMany: false,
-			defaultUri: defaultUri,
-			filters: { 'Ipe': ['ipe', 'pdf'] },
-			title: 'Open Ipe Figure',
-		});
-
-		if (paths === undefined) {
-			logger.debug('No file picked, exiting');
-			return;
-		}
-		path = paths[0];
-
-		logger.debug('User picked file:', path.fsPath);
+		launchIpe(figurePath);
+		return;
 	}
 
-	launchIpe(path);
+	const editor = vscode.window.activeTextEditor!;
+
+	if (!editor.selection.isEmpty) {
+		logger.debug('Using figure name from selected text in document');
+		const figureName = editor.document.getText(editor.selection);
+
+		const config = vscode.workspace.getConfiguration('ipe-tools');
+
+		const documentDir = path.dirname(editor.document.fileName);
+		const figureDirName = config.get('figurePath', 'figures');
+		const figureFileExtension = config.get('figureFileExtension', 'ipe');
+
+		figurePath = vscode.Uri.file(path.join(documentDir, figureDirName, `${figureName}.${figureFileExtension}`));
+		logger.debug('Using figure path:', figurePath.fsPath);
+
+		launchIpe(figurePath);
+		return;
+	}
+
+	logger.debug('No URI provided, prompting user');
+	let defaultUri;
+
+	if (vscode.workspace.workspaceFolders) {
+		defaultUri = vscode.workspace.workspaceFolders[0].uri;
+	} else {
+		defaultUri = vscode.Uri.file(os.homedir());
+	}
+
+	const paths = await vscode.window.showOpenDialog({
+		canSelectFiles: true,
+		canSelectFolders: false,
+		canSelectMany: false,
+		defaultUri: defaultUri,
+		filters: { 'Ipe': ['ipe', 'pdf'] },
+		title: 'Open Ipe Figure',
+	});
+
+	if (paths === undefined) {
+		logger.debug('No file picked, exiting');
+		return;
+	}
+	figurePath = paths[0];
+
+	logger.debug('User picked file:', figurePath.fsPath);
+	launchIpe(figurePath);
 }
 
 
