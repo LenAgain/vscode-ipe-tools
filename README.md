@@ -1,6 +1,6 @@
 # Ipe Tools
 
-A small Visual Studio Code extension for integrating the Ipe extensible drawing editor. This extension is intended for personal use.
+A small Visual Studio Code extension for integrating the Ipe extensible drawing editor. This extension is intended for my personal use.
 
 ## Usage
 
