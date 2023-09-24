@@ -109,6 +109,7 @@ async function newFigure() {
 		defaultUri: getFileDialogUri(),
 		filters: { Ipe: ['ipe', 'pdf'] },
 		title: 'Create Ipe figure',
+		saveLabel: 'Create Figure',
 	});
 
 	if (path === undefined) {
@@ -186,6 +187,7 @@ async function editFigure(figurePath?: vscode.Uri) {
 		defaultUri: getFileDialogUri(),
 		filters: { 'Ipe': ['ipe', 'pdf'] },
 		title: 'Open Ipe Figure',
+		openLabel: 'Open Figure',
 	});
 
 	if (paths === undefined) {
