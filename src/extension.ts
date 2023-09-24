@@ -40,7 +40,10 @@ async function insertFigure() {
 	if (editor.selection.isEmpty) {
 		logger.debug('No editor selection, prompting for figure name');
 
-		const name = await vscode.window.showInputBox({ placeHolder: 'Figure name', prompt: 'Enter the name of the new Ipe figure' });
+		const name = await vscode.window.showInputBox({
+			placeHolder: 'Figure name',
+			prompt: 'Enter the name of the new Ipe figure'
+		});
 
 		if (name === undefined) {
 			return;
