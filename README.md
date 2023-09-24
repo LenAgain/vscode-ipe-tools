@@ -8,14 +8,10 @@ The extension provides three commands.
 
 ### `ipe-tools.insertFigure`
 
-The command flow is roughly as follows:
-- Determine the figure name
-- Insert the snippet
-- Create the figure directory if necessary
-- Launch Ipe to edit the figure
+Inserts a snippet and launches Ipe to edit a new figure.
 
 If the editor has a selection, the first selection is used as the figure name, otherwise the editor prompts for a name.
-The snippet specified in `ipe-tools.snippet` is then inserted.
+The snippet specified in `ipe-tools.snippet` is then inserted which expands around the current selection.
 
 ### `ipe-tools.newFigure`
 
