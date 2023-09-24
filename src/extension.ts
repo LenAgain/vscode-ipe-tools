@@ -91,19 +91,22 @@ async function insertFigure() {
 }
 
 
-async function newFigure() {
-
-	let defaultUri;
-	if (vscode.workspace.workspaceFolders) {
-		defaultUri = vscode.workspace.workspaceFolders[0].uri;
+function getFileDialogUri() {
+	const documentUri = vscode.window.activeTextEditor?.document.fileName;
+	if (documentUri !== undefined) {
+		return vscode.Uri.file(path.dirname(documentUri));
 	} else {
-		defaultUri = vscode.Uri.file(os.homedir());
+		return vscode.Uri.file(os.homedir());
 	}
+}
+
+
+async function newFigure() {
 
 	logger.debug('Prompting for a save location');
 
 	const path = await vscode.window.showSaveDialog({
-		defaultUri: defaultUri,
+		defaultUri: getFileDialogUri(),
 		filters: { Ipe: ['ipe', 'pdf'] },
 		title: 'Create Ipe figure',
 	});
@@ -175,19 +178,12 @@ async function editFigure(figurePath?: vscode.Uri) {
 	}
 
 	logger.debug('No URI provided, prompting user');
-	let defaultUri;
-
-	if (vscode.workspace.workspaceFolders) {
-		defaultUri = vscode.workspace.workspaceFolders[0].uri;
-	} else {
-		defaultUri = vscode.Uri.file(os.homedir());
-	}
 
 	const paths = await vscode.window.showOpenDialog({
 		canSelectFiles: true,
 		canSelectFolders: false,
 		canSelectMany: false,
-		defaultUri: defaultUri,
+		defaultUri: getFileDialogUri(),
 		filters: { 'Ipe': ['ipe', 'pdf'] },
 		title: 'Open Ipe Figure',
 	});
