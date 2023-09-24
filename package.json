@@ -58,12 +58,14 @@
                             "type": "string"
                         },
                         "scope": "resource",
-                        "default": [
-                            "\\begin{figure}[H]",
-                            "\t\\centering",
-                            "\t\\includegraphics{${1:${TM_SELECTED_TEXT}}}\\label{fig:${1:${TM_SELECTED_TEXT}}}",
-                            "\\end{figure}$0"
-                        ]
+                        "default": "\\ipefig{${1:${TM_SELECTED_TEXT}}}"
+                    },
+                    "ipe-tools.figureRegex": {
+                        "markdownDescription": "A regex pattern to search the current line for a snippet name when running `ipe-tools.editFigure`. It must have a capturing group called `figureName`.",
+                        "order": 25,
+                        "type": "string",
+                        "scope": "resource",
+                        "default": "\\\\ipefig{(?<figureName>\\w+)}"
                     },
                     "ipe-tools.figurePath": {
                         "markdownDescription": "The path relative to the current document in which to create new figures when running `ipe-tools.insertFigure`. This assumes the correct platform path separators are used.",

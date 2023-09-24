@@ -128,13 +128,13 @@ async function editFigure(figurePath?: vscode.Uri) {
 		return;
 	}
 
+	const config = vscode.workspace.getConfiguration('ipe-tools');
+
 	const editor = vscode.window.activeTextEditor!;
 
 	if (!editor.selection.isEmpty) {
 		logger.debug('Using figure name from selected text in document');
 		const figureName = editor.document.getText(editor.selection);
-
-		const config = vscode.workspace.getConfiguration('ipe-tools');
 
 		const documentDir = path.dirname(editor.document.fileName);
 		const figureDirName = config.get('figurePath', 'figures');
@@ -145,6 +145,33 @@ async function editFigure(figurePath?: vscode.Uri) {
 
 		launchIpe(figurePath);
 		return;
+	}
+
+	const figureRegex: RegExp = config.get('figureRegex', RegExp(''));
+
+	const line = editor.document.lineAt(editor.selection.active).text;
+
+	const match = line.match(figureRegex);
+
+	if (match) {
+		logger.debug('Regex match, using figure name from current line in document');
+
+		const figureName = match.groups?.figureName;
+
+		if (figureName) {
+			logger.debug('Found figure name from regex:', figureName);
+
+			const documentDir = path.dirname(editor.document.fileName);
+			const figureDirName = config.get('figurePath', 'figures');
+			const figureFileExtension = config.get('figureFileExtension', 'ipe');
+
+			figurePath = vscode.Uri.file(path.join(documentDir, figureDirName, `${figureName}.${figureFileExtension}`));
+			logger.debug('Using figure path:', figurePath.fsPath);
+
+			launchIpe(figurePath);
+			return;
+		}
+		logger.debug('No figure name found from regex match, continuing');
 	}
 
 	logger.debug('No URI provided, prompting user');
