@@ -24,7 +24,6 @@ function launchIpe(path: vscode.Uri) {
 			logger.error('Unexpected Ipe error:', error);
 
 			vscode.window.showErrorMessage("Unexpected Ipe error, check the output panel for more details.");
-
 		}
 	});
 
@@ -52,10 +51,13 @@ async function insertFigure() {
 			prompt: 'Enter the name of the new Ipe figure'
 		});
 
+		// User cancelled the input box, quit
 		if (name === undefined) {
 			return;
 		}
 		figureName = name;
+
+		// We have a figure name so insert it and select it
 
 		logger.debug('Inserting figure name at cursor position:', figureName);
 
@@ -69,6 +71,8 @@ async function insertFigure() {
 		figureName = editor.document.getText(editor.selection);
 		logger.debug('Using figure name from highlighted text in document:', figureName);
 	}
+
+	// We now have the figure name in the editor selected, so insert the snippet around it
 
 	const config = vscode.workspace.getConfiguration('ipe-tools');
 
@@ -102,7 +106,9 @@ async function insertFigure() {
 
 
 function getFileDialogUri() {
+	// What dir to launch the file dialog from - current file dir otherwise home dir
 	const documentUri = vscode.window.activeTextEditor?.document.fileName;
+
 	if (documentUri !== undefined) {
 		return vscode.Uri.file(path.dirname(documentUri));
 	} else {
@@ -149,6 +155,8 @@ async function editFigure(figurePath?: vscode.Uri) {
 	if (editor === undefined) {
 		return;
 	}
+
+	// If we have a selection then launch Ipe with that figure name
 	if (!editor.selection.isEmpty) {
 		logger.debug('Using figure name from selected text in document');
 		const figureName = editor.document.getText(editor.selection);
@@ -163,6 +171,8 @@ async function editFigure(figurePath?: vscode.Uri) {
 		launchIpe(figurePath);
 		return;
 	}
+
+	// We don't have a selection so try to find a figure name on the current line with regex
 
 	const figureRegex: RegExp = config.get('figureRegex', RegExp(''));
 
