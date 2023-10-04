@@ -36,8 +36,12 @@ function launchIpe(path: vscode.Uri) {
 
 async function insertFigure() {
 
-	// This cannot be undefined as the command is only enabled with editorTextFocus
-	const editor = vscode.window.activeTextEditor!;
+	const editor = vscode.window.activeTextEditor;
+
+	if (editor === undefined) {
+		return;
+	}
+
 	let figureName: string;
 
 	if (editor.selection.isEmpty) {
@@ -140,8 +144,11 @@ async function editFigure(figurePath?: vscode.Uri) {
 
 	const config = vscode.workspace.getConfiguration('ipe-tools');
 
-	const editor = vscode.window.activeTextEditor!;
+	const editor = vscode.window.activeTextEditor;
 
+	if (editor === undefined) {
+		return;
+	}
 	if (!editor.selection.isEmpty) {
 		logger.debug('Using figure name from selected text in document');
 		const figureName = editor.document.getText(editor.selection);
