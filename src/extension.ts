@@ -22,6 +22,9 @@ function launchIpe(path: vscode.Uri) {
 			vscode.window.showErrorMessage("Can't find the specified Ipe executable. Check that it's in your PATH or that the provided path is correct.");
 		} else {
 			logger.error('Unexpected Ipe error:', error);
+
+			vscode.window.showErrorMessage("Unexpected Ipe error, check the output panel for more details.");
+
 		}
 	});
 
