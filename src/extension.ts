@@ -77,7 +77,7 @@ async function insertFigure() {
 
 	vscode.commands.executeCommand('editor.action.insertSnippet', { snippet: snippet });
 
-	const figureDir = path.join(path.dirname(editor.document.fileName), config.get('figurePath', 'figures'));
+	const figureDir = path.join(path.dirname(editor.document.fileName), config.get('figureDirectory', 'figures'));
 	const figureDirUri = vscode.Uri.file(figureDir);
 
 	try {

@@ -67,8 +67,8 @@
                         "scope": "resource",
                         "default": "\\\\ipefig{(?<figureName>\\w+)}"
                     },
-                    "ipe-tools.figurePath": {
-                        "markdownDescription": "The path relative to the current document in which to create new figures when running `ipe-tools.insertFigure`. This assumes the correct platform path separators are used.",
+                    "ipe-tools.figureDirectory": {
+                        "markdownDescription": "The directory relative to the current document in which to create new figures when running `ipe-tools.insertFigure`. This assumes the correct platform path separators are used.",
                         "order": 30,
                         "type": "string",
                         "scope": "resource",
