@@ -137,6 +137,17 @@ async function newFigure() {
 }
 
 
+function getFigurePath(document: vscode.TextDocument, figureName: string): vscode.Uri {
+	const config = vscode.workspace.getConfiguration('ipe-tools', document);
+
+	const documentDir = path.dirname(document.fileName);
+	const figureDirName = config.get('figurePath', 'figures');
+	const figureFileExtension = config.get('figureFileExtension', 'ipe');
+
+	return vscode.Uri.file(path.join(documentDir, figureDirName, `${figureName}.${figureFileExtension}`));
+}
+
+
 async function editFigure(figurePath?: vscode.Uri) {
 
 	logger.info('Editing figure');
@@ -159,13 +170,11 @@ async function editFigure(figurePath?: vscode.Uri) {
 	// If we have a selection then launch Ipe with that figure name
 	if (!editor.selection.isEmpty) {
 		logger.debug('Using figure name from selected text in document');
+
 		const figureName = editor.document.getText(editor.selection);
 
-		const documentDir = path.dirname(editor.document.fileName);
-		const figureDirName = config.get('figurePath', 'figures');
-		const figureFileExtension = config.get('figureFileExtension', 'ipe');
+		const figurePath = getFigurePath(editor.document, figureName);
 
-		figurePath = vscode.Uri.file(path.join(documentDir, figureDirName, `${figureName}.${figureFileExtension}`));
 		logger.debug('Using figure path:', figurePath.fsPath);
 
 		launchIpe(figurePath);
@@ -188,11 +197,8 @@ async function editFigure(figurePath?: vscode.Uri) {
 		if (figureName) {
 			logger.debug('Found figure name from regex:', figureName);
 
-			const documentDir = path.dirname(editor.document.fileName);
-			const figureDirName = config.get('figurePath', 'figures');
-			const figureFileExtension = config.get('figureFileExtension', 'ipe');
+			const figurePath = getFigurePath(editor.document, figureName);
 
-			figurePath = vscode.Uri.file(path.join(documentDir, figureDirName, `${figureName}.${figureFileExtension}`));
 			logger.debug('Using figure path:', figurePath.fsPath);
 
 			launchIpe(figurePath);
