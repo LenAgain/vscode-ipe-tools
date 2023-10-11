@@ -6,6 +6,8 @@ import * as vscode from 'vscode';
 
 const logger = vscode.window.createOutputChannel('Ipe Tools', { log: true });
 
+const IPE_FILE_EXTENSION = 'ipe'
+
 
 function launchIpe(path: vscode.Uri) {
 
@@ -75,67 +77,60 @@ async function insertFigure() {
 		return;
 	}
 
-	let figureName: string;
+	const figureName = await vscode.window.showInputBox({
+		placeHolder: 'Figure name',
+		prompt: 'Enter the name of the new Ipe figure'
+	});
 
-	if (editor.selection.isEmpty) {
-		logger.debug('No editor selection, prompting for figure name');
-
-		const name = await vscode.window.showInputBox({
-			placeHolder: 'Figure name',
-			prompt: 'Enter the name of the new Ipe figure'
-		});
-
-		// User cancelled the input box, quit
-		if (name === undefined) {
-			return;
-		}
-		figureName = name;
-
-		// We have a figure name so insert it and select it
-
-		logger.debug('Inserting figure name at cursor position:', figureName);
-
-		const cursorPosition = editor.selection.active;
-		editor.edit(editBuilder => editBuilder.insert(cursorPosition, figureName));
-
-		logger.debug('Selecting figure name in editor');
-
-		editor.selections = [new vscode.Selection(cursorPosition, cursorPosition.translate(0, figureName.length))];
-	} else {
-		figureName = editor.document.getText(editor.selection);
-		logger.debug('Using figure name from highlighted text in document:', figureName);
+	// User cancelled the input box, quit
+	if (figureName === undefined) {
+		return;
 	}
-
-	// We now have the figure name in the editor selected, so insert the snippet around it
 
 	const config = vscode.workspace.getConfiguration('ipe-tools');
 
-	let snippet: string | string[] = config.get('snippet', []);
+	let snippetText: string | string[] = config.get('ipeSnippet', []);
 
-	if (Array.isArray(snippet)) {
+	if (Array.isArray(snippetText)) {
 		const eol = editor.document.eol === 1 ? '\n' : '\r\n';
-		snippet = snippet.join(eol);
+		snippetText = snippetText.join(eol);
 	}
 
-	vscode.commands.executeCommand('editor.action.insertSnippet', { snippet: snippet });
+	const cursorPosition = editor.selection.active;
 
-	const figureDir = path.join(path.dirname(editor.document.fileName), config.get('figureDirectory', 'figures'));
-	const figureDirUri = vscode.Uri.file(figureDir);
+	const snippetEdit = vscode.SnippetTextEdit.insert(
+		cursorPosition,
+		new vscode.SnippetString(snippetText.replace('%f', figureName))
+	);
 
-	try {
-		logger.debug('Checking if figure directory exits:', figureDir);
-		await vscode.workspace.fs.stat(figureDirUri);
-	} catch {
-		logger.debug('Figure directory does not exist, creating path:', figureDir);
-		await vscode.workspace.fs.createDirectory(figureDirUri);
+	const workspaceEdit = new vscode.WorkspaceEdit()
+	workspaceEdit.set(editor.document.uri, [snippetEdit]);
+
+	const figurePath = vscode.Uri.file(path.join(
+		path.dirname(editor.document.fileName),
+		config.get('figureDirectory', 'figures'),
+		`${figureName}.${IPE_FILE_EXTENSION}`,
+	));
+
+	const overwrite = await checkFileExists(figurePath, figureName);
+
+	// User cancelled overwrite prompt
+	if (overwrite === undefined) {
+		return;
 	}
 
-	const fileExtension = config.get('figureFileExtension', 'ipe');
+	// If the file exists and the user says we can overwrite,
+	// delete it so Ipe can create a new one
+	if (overwrite) {
+		workspaceEdit.deleteFile(figurePath);
+	}
 
-	const figurePath = path.join(figureDir, `${figureName}.${fileExtension}`);
-	logger.debug('Using figure path', figurePath);
+	// Otherwise it either doesn't exist or it does but we want to change it,
+	// let Ipe handle it
 
-	launchIpe(vscode.Uri.file(figurePath));
+	vscode.workspace.applyEdit(workspaceEdit);
+
+	launchIpe(figurePath);
 }
 
 
