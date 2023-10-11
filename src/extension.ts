@@ -32,6 +32,40 @@ function launchIpe(path: vscode.Uri) {
 	});
 }
 
+// Check if a figure already exists
+// If it does, ask the user whether to overwrite or not
+// Return yes/no boolean or undefined if the user cancelled the prompt
+async function checkFileExists(figurePath: vscode.Uri, figureName: string): Promise<boolean | undefined> {
+
+	try {
+		await vscode.workspace.fs.stat(figurePath)
+
+		logger.debug('Figure with same name already exists, asking for permission to overwrite');
+
+		const answer = await vscode.window.showWarningMessage(
+			`${figureName} already exists, do you want to overwrite it?`,
+			{ modal: true },
+			'Yes',
+			'No',
+		)
+
+		if (answer === undefined) {
+			logger.debug('User cancelled overwrite prompt');
+			return undefined;
+		}
+		if (answer === 'Yes') {
+			logger.debug('User gave permission to overwrite');
+			return true;
+		}
+
+	} catch (error) {
+		if (!(error instanceof vscode.FileSystemError)) {
+			throw error;
+		}
+	}
+	return false;
+}
+
 
 async function insertFigure() {
 
@@ -280,30 +314,10 @@ async function createMediaEdit(
 
 		logger.debug('Using figure path:', figurePath);
 
-		let overwrite = false;
+		const overwrite = await checkFileExists(figurePath, figureName);
 
-		// Try to check if file exists, if it does ask whether to overwrite
-		// Otherwise ignore and carry on
-		try {
-			await vscode.workspace.fs.stat(figurePath)
-
-			logger.debug('Figure with same name already exists, asking for permission to overwrite');
-
-			vscode.window.showWarningMessage(
-				`${figureName} already exists, do you want to overwrite it?`,
-				{ modal: true },
-				'Yes',
-				'No'
-			).then(answer => {
-				if (answer === 'Yes') {
-					overwrite = true;
-					logger.debug('User gave permission to overwrite');
-				}
-			})
-		} catch (error) {
-			if (!(error instanceof vscode.FileSystemError)) {
-				throw error;
-			}
+		if (overwrite === undefined) {
+			return;
 		}
 
 		// Create additional edit to save the file in the figures directory
