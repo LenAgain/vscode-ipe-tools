@@ -53,7 +53,7 @@
                         "default": "ipe"
                     },
                     "ipe-tools.ipeSnippet": {
-                        "markdownDescription": "The snippet string to insert when running `ipe-tools.insertIpeFigure`. This can be any snippet, but should use the `TM_SELECTED_TEXT` variable in its first placeholder in order to work properly. The figure name is inserted, and then the snippet is inserted while the figure name is selected. This can be a single string or an array of lines.",
+                        "markdownDescription": "The snippet string to insert when running `ipe-tools.insertFigure`. This can be any plain string or snippet. Use the `%f` placeholder for the figure name. This can be a single string or an array of lines.",
                         "order": 20,
                         "type": [
                             "string",
@@ -63,7 +63,7 @@
                             "type": "string"
                         },
                         "scope": "resource",
-                        "default": "\\ipefig{${1:${TM_SELECTED_TEXT}}}"
+                        "default": "\\ipefig{%f}"
                     },
                     "ipe-tools.figureRegex": {
                         "markdownDescription": "A regex pattern to search the current line for a snippet name when running `ipe-tools.editFigure`. It must have a capturing group named `figureName`.",
