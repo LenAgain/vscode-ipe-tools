@@ -245,12 +245,14 @@ async function createMediaEdit(
 	for (const [mime, item] of dataTransfer) {
 
 		if (!SUPPORTED_MIME_TYPES.includes(mime)) {
+			logger.debug('Skipping unsupported MIME type:', mime);
 			continue;
 		}
 
 		const file = item.asFile()
 
 		if (file === undefined) {
+			logger.debug('Cannot resolve data item as file, aborting');
 			return;
 		}
 
@@ -262,8 +264,11 @@ async function createMediaEdit(
 		});
 
 		if (figureName === undefined) {
+			logger.debug('User cancelled figure name prompt, aborting');
 			return;
 		}
+
+		logger.debug('User entered figure name:', figureName);
 
 		const config = vscode.workspace.getConfiguration('ipe-tools', document);
 
@@ -273,12 +278,16 @@ async function createMediaEdit(
 			figureName + parsedFileName.ext,
 		))
 
+		logger.debug('Using figure path:', figurePath);
+
 		let overwrite = false;
 
 		// Try to check if file exists, if it does ask whether to overwrite
 		// Otherwise ignore and carry on
 		try {
 			await vscode.workspace.fs.stat(figurePath)
+
+			logger.debug('Figure with same name already exists, asking for permission to overwrite');
 
 			vscode.window.showWarningMessage(
 				`${figureName} already exists, do you want to overwrite it?`,
@@ -288,6 +297,7 @@ async function createMediaEdit(
 			).then(answer => {
 				if (answer === 'Yes') {
 					overwrite = true;
+					logger.debug('User gave permission to overwrite');
 				}
 			})
 		} catch (error) {
