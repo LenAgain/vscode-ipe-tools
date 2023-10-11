@@ -14,7 +14,9 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onLanguage:latex"
+    ],
     "contributes": {
         "commands": [
             {
@@ -50,10 +52,13 @@
                         "scope": "resource",
                         "default": "ipe"
                     },
-                    "ipe-tools.snippet": {
-                        "markdownDescription": "The snippet string to insert when running `ipe-tools.insertFigure`. This can be any snippet, but should use the `TM_SELECTED_TEXT` variable in its first placeholder in order to work properly. The figure name is inserted, and then the snippet is inserted while the figure name is selected. This can be a single string or an array of lines.",
+                    "ipe-tools.ipeSnippet": {
+                        "markdownDescription": "The snippet string to insert when running `ipe-tools.insertIpeFigure`. This can be any snippet, but should use the `TM_SELECTED_TEXT` variable in its first placeholder in order to work properly. The figure name is inserted, and then the snippet is inserted while the figure name is selected. This can be a single string or an array of lines.",
                         "order": 20,
-                        "type": ["string", "array"],
+                        "type": [
+                            "string",
+                            "array"
+                        ],
                         "items": {
                             "type": "string"
                         },
@@ -61,25 +66,31 @@
                         "default": "\\ipefig{${1:${TM_SELECTED_TEXT}}}"
                     },
                     "ipe-tools.figureRegex": {
-                        "markdownDescription": "A regex pattern to search the current line for a snippet name when running `ipe-tools.editFigure`. It must have a capturing group called `figureName`.",
+                        "markdownDescription": "A regex pattern to search the current line for a snippet name when running `ipe-tools.editFigure`. It must have a capturing group named `figureName`.",
                         "order": 25,
                         "type": "string",
                         "scope": "resource",
                         "default": "\\\\ipefig{(?<figureName>\\w+)}"
                     },
                     "ipe-tools.figureDirectory": {
-                        "markdownDescription": "The directory relative to the current document in which to create new figures when running `ipe-tools.insertFigure`. This assumes the correct platform path separators are used.",
+                        "markdownDescription": "The directory relative to the current document in which to create new figures when running `ipe-tools.insertFigure`, or when dropping or pasting external media.",
                         "order": 30,
                         "type": "string",
                         "scope": "resource",
                         "default": "figures"
                     },
-                    "ipe-tools.figureFileExtension": {
-                        "description": "The file extension to use when creating new figures, without the leading dot.",
+                    "ipe-tools.externalSnippet": {
+                        "markdownDescription": "The snippet string to insert when dropping or pasting external media. This can be any plain string or snippet. Use the `%f` placeholder for the figure name. This can be a single string or an array of lines.",
                         "order": 40,
-                        "type": "string",
+                        "type": [
+                            "string",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "string"
+                        },
                         "scope": "resource",
-                        "default": "ipe"
+                        "default": "\\extfig{%f}"
                     }
                 }
             }
@@ -88,6 +99,9 @@
     "engines": {
         "vscode": "^1.78.0"
     },
+    "enabledApiProposals": [
+        "documentPaste"
+    ],
     "main": "./out/extension.js",
     "scripts": {
         "vscode:prepublish": "npm run compile",
@@ -108,6 +122,7 @@
         "glob": "^8.1.0",
         "mocha": "^10.2.0",
         "typescript": "^4.9.5",
-        "@vscode/test-electron": "^2.3.0"
+        "@vscode/test-electron": "^2.3.0",
+        "@vscode/dts": "^0.4.0"
     }
 }

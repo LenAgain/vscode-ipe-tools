@@ -230,13 +230,154 @@ async function editFigure(figurePath?: vscode.Uri) {
 }
 
 
+const SUPPORTED_MIME_TYPES = [
+	'application/pdf',
+	'image/jpeg',
+	'image/png',
+]
+
+
+async function createMediaEdit(
+	document: vscode.TextDocument,
+	dataTransfer: vscode.DataTransfer,
+): Promise<{ insertText: vscode.SnippetString, additionalEdit: vscode.WorkspaceEdit } | undefined> {
+
+	for (const [mime, item] of dataTransfer) {
+
+		if (!SUPPORTED_MIME_TYPES.includes(mime)) {
+			continue;
+		}
+
+		const file = item.asFile()
+
+		if (file === undefined) {
+			return;
+		}
+
+		const parsedFileName = path.parse(file.name)
+
+		let figureName = await vscode.window.showInputBox({
+			prompt: 'Enter the name of the image to insert',
+			value: parsedFileName.name,
+		});
+
+		if (figureName === undefined) {
+			return;
+		}
+
+		const config = vscode.workspace.getConfiguration('ipe-tools', document);
+
+		const figurePath = vscode.Uri.file(path.join(
+			path.dirname(document.fileName),
+			config.get('figureDirectory', ''),
+			figureName + parsedFileName.ext,
+		))
+
+		let overwrite = false;
+
+		// Try to check if file exists, if it does ask whether to overwrite
+		// Otherwise ignore and carry on
+		try {
+			await vscode.workspace.fs.stat(figurePath)
+
+			vscode.window.showWarningMessage(
+				`${figureName} already exists, do you want to overwrite it?`,
+				{ modal: true },
+				'Yes',
+				'No'
+			).then(answer => {
+				if (answer === 'Yes') {
+					overwrite = true;
+				}
+			})
+		} catch (error) {
+			if (!(error instanceof vscode.FileSystemError)) {
+				throw error;
+			}
+		}
+
+		// Create additional edit to save the file in the figures directory
+		const workspaceEdit = new vscode.WorkspaceEdit()
+
+		const contents = await file.data()
+
+		workspaceEdit.createFile(figurePath, { contents: contents, overwrite: overwrite });
+
+		// Now the actual pase edit to insert the LaTeX code
+		const insertText = config.get('externalSnippet', '').replace('%f', figureName);
+
+		return {
+			insertText: new vscode.SnippetString(insertText),
+			additionalEdit: workspaceEdit,
+		}
+	}
+}
+
+
+class ImageDropProvider implements vscode.DocumentDropEditProvider {
+
+	async provideDocumentDropEdits(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		dataTransfer: vscode.DataTransfer,
+		token: vscode.CancellationToken
+	): Promise<vscode.DocumentDropEdit | undefined> {
+
+		const result = await createMediaEdit(document, dataTransfer);
+
+		if (result === undefined) {
+			return;
+		}
+
+		const { insertText, additionalEdit } = result
+
+		const dropEdit = new vscode.DocumentDropEdit(insertText);
+		dropEdit.additionalEdit = additionalEdit
+
+		return dropEdit
+	}
+}
+
+
+class ImagePasteProvider implements vscode.DocumentPasteEditProvider {
+
+	async provideDocumentPasteEdits(
+		document: vscode.TextDocument,
+		ranges: readonly vscode.Range[],
+		dataTransfer: vscode.DataTransfer,
+		token: vscode.CancellationToken
+	): Promise<vscode.DocumentPasteEdit | undefined> {
+
+		const result = await createMediaEdit(document, dataTransfer);
+
+		if (result === undefined) {
+			return;
+		}
+
+		const { insertText, additionalEdit } = result
+
+		const pasteEdit = new vscode.DocumentPasteEdit(insertText, 'Insert external figure');
+		pasteEdit.additionalEdit = additionalEdit
+
+		return pasteEdit
+	}
+}
+
+
 export function activate(context: vscode.ExtensionContext) {
 
 	logger.info('Extension activated');
+
+	const latexSelector = { scheme: 'file', language: 'latex' }
+
+	// For some reason defining the supported mime types means the provider isn't called, as of 11/10/23
+	const pasteMetadata = { id: 'paste-figure', pasteMimeTypes: ['*/*'] }
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(`ipe-tools.insertFigure`, insertFigure),
 		vscode.commands.registerCommand(`ipe-tools.newFigure`, newFigure),
 		vscode.commands.registerCommand(`ipe-tools.editFigure`, editFigure),
+		vscode.languages.registerDocumentDropEditProvider(latexSelector, new ImageDropProvider()),
+		vscode.languages.registerDocumentPasteEditProvider(latexSelector, new ImagePasteProvider(), pasteMetadata)
 	);
 }
