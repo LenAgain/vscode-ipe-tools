@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 
 const logger = vscode.window.createOutputChannel('Ipe Tools', { log: true });
 
-const IPE_FILE_EXTENSION = 'ipe'
+const IPE_FILE_EXTENSION = 'ipe';
 
 
 function launchIpe(path: vscode.Uri) {
@@ -40,7 +40,7 @@ function launchIpe(path: vscode.Uri) {
 async function checkFileExists(figurePath: vscode.Uri, figureName: string): Promise<boolean | undefined> {
 
 	try {
-		await vscode.workspace.fs.stat(figurePath)
+		await vscode.workspace.fs.stat(figurePath);
 
 		logger.debug('Figure with same name already exists, asking for permission to overwrite');
 
@@ -49,7 +49,7 @@ async function checkFileExists(figurePath: vscode.Uri, figureName: string): Prom
 			{ modal: true },
 			'Yes',
 			'No',
-		)
+		);
 
 		if (answer === undefined) {
 			logger.debug('User cancelled overwrite prompt');
@@ -114,7 +114,7 @@ async function insertFigure() {
 		new vscode.SnippetString(snippetText.replace('%f', figureName))
 	);
 
-	const workspaceEdit = new vscode.WorkspaceEdit()
+	const workspaceEdit = new vscode.WorkspaceEdit();
 	workspaceEdit.set(editor.document.uri, [snippetEdit]);
 
 	const figurePath = getFigurePath(editor.document, figureName);
@@ -251,7 +251,7 @@ const SUPPORTED_MIME_TYPES = [
 	'application/pdf',
 	'image/jpeg',
 	'image/png',
-]
+];
 
 
 async function createMediaEdit(
@@ -266,14 +266,14 @@ async function createMediaEdit(
 			continue;
 		}
 
-		const file = item.asFile()
+		const file = item.asFile();
 
 		if (file === undefined) {
 			logger.debug('Cannot resolve data item as file, aborting');
 			return;
 		}
 
-		const parsedFileName = path.parse(file.name)
+		const parsedFileName = path.parse(file.name);
 
 		let figureName = await vscode.window.showInputBox({
 			prompt: 'Enter the name of the image to insert',
@@ -293,7 +293,7 @@ async function createMediaEdit(
 			path.dirname(document.fileName),
 			config.get('figureDirectory', ''),
 			figureName + parsedFileName.ext,
-		))
+		));
 
 		logger.debug('Using figure path:', figurePath);
 
@@ -304,9 +304,9 @@ async function createMediaEdit(
 		}
 
 		// Create additional edit to save the file in the figures directory
-		const workspaceEdit = new vscode.WorkspaceEdit()
+		const workspaceEdit = new vscode.WorkspaceEdit();
 
-		const contents = await file.data()
+		const contents = await file.data();
 
 		workspaceEdit.createFile(figurePath, { contents: contents, overwrite: overwrite });
 
@@ -316,7 +316,7 @@ async function createMediaEdit(
 		return {
 			insertText: new vscode.SnippetString(insertText),
 			additionalEdit: workspaceEdit,
-		}
+		};
 	}
 }
 
@@ -336,12 +336,12 @@ class ImageDropProvider implements vscode.DocumentDropEditProvider {
 			return;
 		}
 
-		const { insertText, additionalEdit } = result
+		const { insertText, additionalEdit } = result;
 
 		const dropEdit = new vscode.DocumentDropEdit(insertText);
-		dropEdit.additionalEdit = additionalEdit
+		dropEdit.additionalEdit = additionalEdit;
 
-		return dropEdit
+		return dropEdit;
 	}
 }
 
@@ -361,12 +361,12 @@ class ImagePasteProvider implements vscode.DocumentPasteEditProvider {
 			return;
 		}
 
-		const { insertText, additionalEdit } = result
+		const { insertText, additionalEdit } = result;
 
 		const pasteEdit = new vscode.DocumentPasteEdit(insertText, 'Insert external figure');
-		pasteEdit.additionalEdit = additionalEdit
+		pasteEdit.additionalEdit = additionalEdit;
 
-		return pasteEdit
+		return pasteEdit;
 	}
 }
 
@@ -375,10 +375,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	logger.info('Extension activated');
 
-	const latexSelector = { scheme: 'file', language: 'latex' }
+	const latexSelector = { scheme: 'file', language: 'latex' };
 
 	// For some reason defining the supported mime types means the provider isn't called, as of 11/10/23
-	const pasteMetadata = { id: 'paste-figure', pasteMimeTypes: ['*/*'] }
+	const pasteMetadata = { id: 'paste-figure', pasteMimeTypes: ['*/*'] };
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(`ipe-tools.insertFigure`, insertFigure),
