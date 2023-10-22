@@ -69,14 +69,28 @@ async function checkFileExists(figurePath: vscode.Uri, figureName: string): Prom
 }
 
 
-function getFigurePath(document: vscode.TextDocument, figureName: string): vscode.Uri {
+async function getFigurePath(document: vscode.TextDocument, figureName: string): Promise<vscode.Uri> {
 	const config = vscode.workspace.getConfiguration('ipe-tools', document);
 
-	return vscode.Uri.file(path.join(
-		path.dirname(document.fileName),
-		config.get('figurePath', 'figures'),
-		`${figureName}.${IPE_FILE_EXTENSION}`,
-	));
+	const figureDir = vscode.Uri.file(
+		path.join(
+			path.dirname(document.fileName),
+			config.get('figureDirectory', 'figures'),
+		)
+	);
+
+	// Check if the figure directory actually exists
+	try {
+		await vscode.workspace.fs.stat(figureDir);
+	} catch (error) {
+		if (error instanceof vscode.FileSystemError) {
+			await vscode.workspace.fs.createDirectory(figureDir);
+		} else {
+			throw error;
+		}
+	}
+
+	return vscode.Uri.joinPath(figureDir, `${figureName}.${IPE_FILE_EXTENSION}`);
 }
 
 
@@ -117,7 +131,7 @@ async function insertFigure() {
 	const workspaceEdit = new vscode.WorkspaceEdit();
 	workspaceEdit.set(editor.document.uri, [snippetEdit]);
 
-	const figurePath = getFigurePath(editor.document, figureName);
+	const figurePath = await getFigurePath(editor.document, figureName);
 
 	const overwrite = await checkFileExists(figurePath, figureName);
 
@@ -196,7 +210,7 @@ async function editFigure(figurePath?: vscode.Uri) {
 
 		const figureName = editor.document.getText(editor.selection);
 
-		const figurePath = getFigurePath(editor.document, figureName);
+		const figurePath = await getFigurePath(editor.document, figureName);
 
 		launchIpe(figurePath);
 		return;
@@ -217,7 +231,7 @@ async function editFigure(figurePath?: vscode.Uri) {
 		if (figureName) {
 			logger.debug('Using figure name from regex match on current line:', figureName);
 
-			const figurePath = getFigurePath(editor.document, figureName);
+			const figurePath = await getFigurePath(editor.document, figureName);
 
 			launchIpe(figurePath);
 			return;
